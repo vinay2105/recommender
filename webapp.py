@@ -4,10 +4,34 @@ import pandas as pd
 st.title('Movie Recommendation App')
 new_df = pickle.load(open('movies.pkl','rb'))
 movies_list = new_df['title'].values
-import urllib.request
-url = "https://drive.google.com/file/d/1EJKk3fhC-krId6_mV_Ufp-iW8zm-JHKr/view?usp=sharing"
-similarity = "similarity.pkl"
-similarity = urllib.request.urlretrieve(url, similarity)
+import gdown
+
+# Google Drive file ID
+file_id = '1BWTpaIBrpK-o8IUYi9Q0oElai6FDYflM'  # Replace this with your file ID
+url = f"https://drive.google.com/file/d/1BWTpaIBrpK-o8IUYi9Q0oElai6FDYflM/view?usp=sharing={file_id}"
+
+output_file = "similarity.pkl"
+print("Downloading similarity.pkl from Google Drive...")
+
+gdown.download(url, output_file, quiet=False, fuzzy=True)
+
+print("Download complete!")
+import pickle
+
+file_path = 'similarity.pkl'
+
+try:
+    with open(file_path, 'rb') as f:
+        similarity = pickle.load(f)
+except pickle.UnpicklingError as e:
+    print(f"Error unpickling file: {e}")
+
+
+
+
+
+
+
 
 
 def recommend(movie):
