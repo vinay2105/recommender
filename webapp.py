@@ -1,17 +1,67 @@
 import pickle
 import streamlit as st
 import pandas as pd
-from model import recommend
-from model import fetch_movie_poster
-from sklearn.metrics.pairwise import cosine_similarity
+import requests
+import os
 st.title('Movie Recommendation App')
 new_df = pickle.load(open('movies.pkl','rb'))
 movies_list = new_df['title'].values
-from sklearn.feature_extraction.text import CountVectorizer
-cv = CountVectorizer(max_features=6000,stop_words='english')
-vectors = cv.fit_transform(new_df['tags']).toarray()
 
-similarity = cosine_similarity(vectors)
+
+import gdown
+new_df = pickle.load(open('movies.pkl','rb'))
+
+file_id = '1BWTpaIBrpK-o8IUYi9Q0oElai6FDYflM'
+url = f"https://drive.google.com/file/d/1BWTpaIBrpK-o8IUYi9Q0oElai6FDYflM/view?usp=sharing={file_id}"
+
+output_file = "similarity.pkl"
+
+gdown.download(url, output_file, quiet=False, fuzzy=True)
+
+print("Download complete!")
+import pickle
+
+file_path = 'similarity.pkl'
+
+try:
+    with open(file_path, 'rb') as f:
+        similarity = pickle.load(f)
+except pickle.UnpicklingError as e:
+    print(f"Error unpickling file: {e}")
+
+
+def fetch_movie_poster(movie_id):
+    api_key = os.getenv("TMDB_ID")
+    base_url = "https://api.themoviedb.org/3/movie/"
+    poster_base_url = "https://image.tmdb.org/t/p/w500"
+
+    url = f"{base_url}{movie_id}?api_key={api_key}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        poster_path = data.get("poster_path")
+        if poster_path:
+            return f"{poster_base_url}{poster_path}"
+        else:
+            return None
+    else:
+        print(f"Error: Unable to fetch details for movie ID {movie_id}.")
+        return None
+
+def recommend(movie):
+    movie_index = new_df[new_df['title']==movie].index[0]
+    distances = similarity[movie_index]
+    movie_list = sorted(list(enumerate(distances)),reverse=True,key = lambda x:x[1])[1:10]
+    L = []
+    P = []
+    for i in movie_list:
+        movie_id=new_df.iloc[i[0]].movie_id
+        L.append(new_df.iloc[i[0]].title)
+        P.append(fetch_movie_poster(movie_id))
+
+    return L,P
+
 movies_names = []
 movies_poster = []
 
